@@ -1,3 +1,4 @@
+import os
 import sys
 import torch
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, BitsAndBytesConfig
@@ -6,6 +7,7 @@ from IndicTransToolkit.processor import IndicProcessor
 from nltk import sent_tokenize
 from indicnlp.tokenize.sentence_tokenize import sentence_split, DELIM_PAT_NO_DANDA
 from transformers import GenerationConfig
+from huggingface_hub import login
 
 
 class BatchTranslation:
@@ -71,19 +73,28 @@ class BatchTranslation:
                 print("Flash Attention v2 is not available. Falling back to eager attention.")
                 attn_implementation = 'eager'
 
+        hf_token = os.environ.get("HUGGINGFACE_TOKEN") or os.environ.get("HF_TOKEN")
+        if hf_token:
+            try:
+                login(token=hf_token)
+            except Exception as e:
+                print(f"Warning: HuggingFace login error: {e}")
+
         self.model = AutoModelForSeq2SeqLM.from_pretrained(
             self.model_dir,
             trust_remote_code=True,
             attn_implementation=attn_implementation,
             quantization_config=bnb_config,
             low_cpu_mem_usage=True,
-            local_files_only=False
+            local_files_only=False,
+            token=hf_token
         ).to(device)
 
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.model_dir,
             trust_remote_code=True,
-            local_files_only=False
+            local_files_only=False,
+            token=hf_token
         )
 
         if bnb_config is None and device == 'cuda':
