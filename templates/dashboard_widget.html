@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenant Translation Widget</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; }
+        body { background: #0b0f19; color: #f8fafc; padding: 16px; min-width: 320px; }
+        .widget-card { background: rgba(22, 33, 58, 0.9); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 18px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
+        .widget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px; }
+        .widget-title { font-size: 16px; font-weight: 700; background: linear-gradient(135deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 13px; }
+        .stat-label { color: #94a3b8; }
+        .stat-val { font-weight: 600; color: #fff; }
+        .bar { height: 6px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; margin-top: 4px; }
+        .bar-fill { height: 100%; background: #38bdf8; border-radius: 99px; }
+        .btn-topup { width: 100%; margin-top: 14px; padding: 10px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; transition: 0.2s; }
+        .btn-topup:hover { background: #059669; }
+    </style>
+</head>
+<body>
+    <div class="widget-card">
+        <div class="widget-header">
+            <div class="widget-title">IndicTrans Tenant Meter</div>
+            <span style="font-size: 11px; background: rgba(16,185,129,0.15); color: #34d399; padding: 2px 8px; border-radius: 99px;">Active</span>
+        </div>
+
+        <div class="stat-row">
+            <span class="stat-label">Tenant</span>
+            <span class="stat-val">{{ tenant.name|default:"Not Configured" }}</span>
+        </div>
+
+        <div class="stat-row">
+            <span class="stat-label">Token Balance</span>
+            <span class="stat-val" style="color: #34d399; font-size: 16px;">{{ stats.tokens.balance|default:"0" }}</span>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+            <div class="stat-row" style="margin-bottom: 2px;">
+                <span class="stat-label">Storage (200MB limit)</span>
+                <span class="stat-val">{{ stats.storage.used_mb|default:"0" }} / 200 MB</span>
+            </div>
+            <div class="bar">
+                <div class="bar-fill" style="width: {{ stats.storage.percentage|default:'0' }}%;"></div>
+            </div>
+        </div>
+
+        <div class="stat-row">
+            <span class="stat-label">Extracted / Translated</span>
+            <span class="stat-val">{{ stats.activity.extracted_pages_count|default:"0" }} / {{ stats.activity.translated_pages_count|default:"0" }} pages</span>
+        </div>
+
+        <button class="btn-topup" onclick="topUp()">+ Instant 5M Tokens Top-Up</button>
+    </div>
+
+    <script>
+        async function topUp() {
+            const apiKey = '{{ api_key }}';
+            try {
+                const res = await fetch('/api/payment/confirm/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-API-KEY': apiKey },
+                    body: JSON.stringify({ order_id: 'WIDGET-ORDER', transaction_id: 'TXN-' + Date.now() })
+                });
+                const json = await res.json();
+                if (json.success) {
+                    alert('Credited 5,000,000 Tokens!');
+                    window.location.reload();
+                } else {
+                    alert('Top up failed: ' + (json.error?.message || 'Error'));
+                }
+            } catch (e) {
+                alert('Error: ' + e);
+            }
+        }
+    </script>
+</body>
+</html>

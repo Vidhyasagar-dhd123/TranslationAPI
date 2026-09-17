@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: indictrans-translation-api
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn translationapi.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120"
+    plan: starter
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: translation-api-db
+          property: connectionString
+      - key: HUGGINGFACE_TOKEN
+        sync: false
+
+databases:
+  - name: translation-api-db
+    plan: starter
+    databaseName: translation_api
+    user: translation_user
